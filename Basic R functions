@@ -1,0 +1,103 @@
+
+
+View(movies)
+
+#How many movies are recorded in the data frame?
+dim(movies)[1]
+
+#How many variables do they measure for each movie?
+dim(movies)[2]
+
+#What is the R command that will give me the 10th movie?
+movies[10,]# for all details of the movie 
+movies[10,1]# for title of the movie
+
+#What is the R command to let me take a peek at the top few rows?
+head(movies) 
+head(movies,10) #for top 10 rows
+head(movies,n=10) # for top n rows
+
+#What are the categorical variables?
+str(movies)
+ls.str(movies)
+names(movies)
+
+#How many numeric type variables (num not int) does it have?
+numVars <- NULL
+for(var in names(movies))
+{
+  if (class(movies[,var]) == 'numeric')
+  {
+      numVars <- c(numVars, var)
+  }
+}
+numVars
+# or
+ls.str(movies) # 11
+
+#What are the levels of mpaa?
+unique(movies$mpaa)
+
+#What is the longest running time in minutes of the movies?
+max(movies[3])
+max(movies$length)
+
+#What is the title of the longest running movie?
+movies[which(movies[3]==max(movies[3],na.rm=TRUE)),1]
+
+#What is the title of the shortest running movie?
+movies[which(movies[3]==min(movies[3],na.rm=TRUE)),1]
+
+#When was the oldest movie made?
+min(movies[2])
+min(movies$year)
+
+#What is the title of the oldest movie?
+movies[which(movies[2]==min(movies[2],na.rm=TRUE)),1]
+
+#What is the title of the most recent movie?
+movies[which(movies[2]==max(movies[2],na.rm=TRUE)),1]
+
+#When was the most recent movie made?
+max(movies$year)
+
+#How many action movies are there?
+sum(movies$Action==1) 
+#or 
+sum(movies$Action==TRUE)
+
+
+#What is the title of the most expensive movie to make?
+movies[which(movies$budget == max(movies$budget,na.rm=TRUE)),1]
+
+#How much did the most expensive movie cost?
+max(movies$budget, na.rm=TRUE)
+
+
+
+#Building a new Data Frame#
+newMov<-filter(movies, movies$budget!=" ", movies$mpaa!="")
+newMov<-newMov[,-(7:16)]
+newMov<-arrange(newMov, rating)
+newMov<-mutate(newMov,RatingOverMean=rating-mean(rating))
+
+# How many movies are left in newMovies?
+dim(newMov)[1]
+
+# How many variables are being reported for each movies in newMovies?
+dim(newMov)[2]
+
+# What is the 5th row of the newMovie data frame?
+newMov[5,]
+
+# What is an R command(s) to get the last movie in newMovies?
+tail(newMov, n=1)
+
+# How many movies in newMovies has a centered rating greater than 0?
+dim(filter(newMov, RatingOverMean>0))[1]
+
+
+newdata <- mydata[ which(mydata$gender=='F' 
+                         & mydata$age > 65), ]
+
+
