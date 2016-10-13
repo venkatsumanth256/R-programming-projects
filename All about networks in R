@@ -1,0 +1,351 @@
+#===============================================================================
+# PROBLEM 1) Creating Random Adjacency Matrices
+#
+# Script Name: adjMatrix
+# Input: 
+#  	n... The number of vertices in the graph
+#		p... Probablity two vertices are connected
+#		plot... whether or not the matrix should be plotted as a graph
+# Output: The nxn matrix of zero and ones
+# Error Checking: The dimension is postive (else return NULL)
+#
+# Description: The matrix is related to a simple, undirected graph of n vertices.
+#  In the graph is Vertex i and Vectex j are joined by an edge, then in the matrix
+#   A[i,j] = 1, if no edge exists then A[i,j]=0.  There are differenct ways of handling 
+#   the diagonal.  We will require the diagonal elements to be NA.
+#
+#   Whether or not an entry in the matrix is 0 or 1, is determined by drawing numbers
+#   from the binomial distribution.  This distribution will yield a 1 with probability p and a 
+#   o with probability (1-p).  In R it will work like this, in the ith column (vertex i)
+#   , we require A[i,i] to be NA.  This leaves n-1 entries to be determined. We
+#   use the command rbinom(n-1,1,p) to generate these entries all at once, or
+#   rbinom(1,1,p) to generate them one at a time.
+#
+# Plot: Using igraph create a simple plot. Use a color easy on the eyes such
+#   as something found in the Brewer color palette (discussed in class)
+#
+
+require(igraph)
+adjMatrix<-function(n,p,plot=FALSE)
+{
+  A<-matrix(NA,nrow=n,ncol=n)
+  for(i in 1:n)
+  {
+    for(j in 1:n)
+    {
+      
+      binomialMatrix <- rbinom(1,1,p)
+      A[i,j]<-binomialMatrix
+      A[j,i]<-A[i,j]
+      diag(A)<-NA
+      
+    }  
+  }
+  if(plot == TRUE)
+  {
+    gA <- graph.adjacency(A, mode="undirected",diag=FALSE )# Create graph from Adj matrix
+    plot(gA, layout=layout.auto,main="Random Graph")
+    return(A)
+  }
+  else
+  {
+    return(A)
+  }
+}
+
+#============================================================================
+# PROBLEM 2) Person with the most friends in the network
+
+# Script Name: vowelMax
+# Input: 
+#        A... An adjacency matrix
+#        plot... Plot the graph with the "friends" network highlighted
+# Output: The number of the vertex with the most edge connections
+# Error Checking: None
+#
+# Description: The number of "friends" a person has in a network is the 
+#   number of edges connected to that vertex.  The ith person
+#   in the network, will be connected to the jth person if A[i,j]=1.  So the 
+#   number of 1's in the ith column reports how many edges connect person i to others
+#   In mathematical terms, this is called the "degree" of vertex i. 
+#
+#   So you must determine the number of ones in each column and then find
+#   which column has the most ones.
+#
+# Hint:  There is a quick trick to use here.  Since a column has only
+#  0 or 1 in it, the sum of all of the numbers in the column is the same
+#  as the number of 1's in the column.  Prove that to yourself. 
+#
+# Plot: Use igraph to plot the graph. Use three colors for the vertices: one
+# for the most friendly person, another for his/her immediate friends, and another
+#  for the remaining vertices. Color red the edges from the most friendly person to
+#  his/her friends.  All remaining edges are black.
+#
+
+require(igraph)
+library("RColorBrewer") 
+mostFriends<-function(A,plot=FALSE)
+{
+  for(j in 1:ncol(A))
+  {
+    for(i in 1:nrow(A))
+    {
+      if(i==j)
+      {
+        A[i,j]=0
+      }
+    }
+  }
+  q<-colSums(A)
+  maximValue<-max(q)
+  maxim<-0
+  for(i in 1:length(q))
+  {
+    if(q[i]==maximValue)
+    {
+      maxim<-i
+    }
+  }
+  t<-NULL
+  for(i in 1:ncol(A))
+  {
+    if(A[maxim,i]==1)
+    {
+      t<-c(t,i)
+    }
+    
+  }
+  
+  if(plot==TRUE)
+  {
+    # One vertex
+    pastel1<-brewer.pal(8,"Pastel1")  # Try a different palette  
+    pastel2<-brewer.pal(8,"Pastel2")  # Try a different palette  
+    pastel3<-brewer.pal(8,"Set1")  # Try a different palette  
+    gA <- graph.adjacency(A, mode="undirected",diag=FALSE )
+    V(gA)$color<-pastel3[3]	# Base color for all nodes
+    V(gA)[maxim]$color<-pastel2[2]  # changes the 5 vertex to the 4th color of the palette
+    V(gA)[t]$color<-pastel1[6]  # changes the 5 vertex to the 4th color of the palette
+    E(gA)$color<-"black"  # Base colors for edges
+    E(gA)[maxim%--%t]$color<-"red"  #  colors the edge fr
+    plot(gA, layout=layout.auto,main="Random Graph A Vertix Colored")
+  }
+  
+  print(maxim)
+  print(t)
+}
+
+
+
+
+#============================================================================
+# PROBLEM 3) Find a lonely person
+
+# Script Name: noFriends
+# Input: 
+#        A... An adjacency matrix
+# Output: The number of the vertex with the no edge connections
+# Error Checking: None
+#
+# Description: The number of "friends" a person has in a network is the 
+#   number of edges connected to that vertex.  The ith person
+#   in the network, will be connected to the jth person if A[i,j]=1.  So the 
+#   number of 1's in the ith column reports how many edges connect person i to others
+#   In mathematical terms, this is called the "degree" of vertex i. 
+#
+#   So you must determine the number of ones in each column and then find
+#   which column has the most ones.
+#
+# Hint:  There is a quick trick to use here.  Since a column has only
+#  0 or 1 in it, the sum of all of the numbers in the column is the same
+#  as the number of 1's in the column.  Prove that to yourself. 
+#
+# Plot: Create a plot of the graph using igraph.  Make the "lonely" person/people a
+# different color
+#
+
+require(igraph)
+library("RColorBrewer")  
+noFriends<-function(A,plot)
+{
+  for(j in 1:ncol(A))
+  {
+    for(i in 1:nrow(A))
+    {
+      if(i==j)
+      {
+        A[i,j]=0
+      }
+    }
+  }
+  if(plot == TRUE)
+  {
+    q<-colSums(A)
+    noFriend<- which(q==0)
+    print(noFriend)
+    gA <- graph.adjacency(A, mode="undirected",diag=FALSE )
+    V(gA)[noFriend]$color<-"red"  # changes the 5 vertex to the 4th color of the palette
+    plot(gA, layout=layout.auto,main="Random Graph Featuring Vertex 5")
+  }else if (plot == FALSE)
+  {
+    print(noFriend)
+  }
+  
+}
+#============================================================================
+# PROBLEM 4) Number of friendship relationships in the network
+
+# Script Name: numFriendships
+# Input: 
+#        A... An adjacency matrix
+# Output: The number of uniqe edges in the graph 
+#
+# Description:  The number of friendships in the network is the number of edges
+#    in the graph.  Basically, count the ones in the adjacency matrix, but be
+#    careful.  (Remember, an edge from i to j is the same as an edge from j to 1)
+#
+#  
+#
+require(igraph)
+library("RColorBrewer") 
+numFriendships<-function(A)
+{
+  for(j in 1:ncol(A))
+  {
+    for(i in 1:nrow(A))
+    {
+      if(i==j)
+      {
+        A[i,j]=0
+      }
+    }
+  }
+  friendShips<-sum(A)
+  return(friendShips)
+}
+
+
+#============================================================================
+# PROBLEM 5) Add a person to the friendship network
+
+# Script Name: addPerson
+# Input: 
+#        A... An adjacency matrix
+#		 p... Probability a relationship forms
+#		 plot... Show the new person and relationships
+# Output: New adjacency matrix
+#
+# Description:  As in creating an adjacency matrix, a new column is added
+#  and the binomail distribution is used to determine the 1 entries.
+#
+# Plot: Plot the graph using igraph. Use three colors for the vertices: one
+# for the newly added person, another for his/her immediate friends, and another
+#  for the remaining vertices. Color red the edges from the new person to
+#  his/her friends.  All remaining edges are black.
+#
+#  
+#
+
+require(igraph)
+library("RColorBrewer") 
+addPerson<-function(A,p,plot)
+{
+  t<-ncol(A)
+  x<-cbind(A,rbinom(t,1,p))
+  q<-ncol(x)
+  transpose<-t(x[,q])
+  transpose<-append(transpose,NA) #Appending NA so that we will get same number of columns to bind (As suggested in the help material)#
+  w<-rbind(x,transpose)
+  x<-w
+  print(x)
+  if(plot==TRUE)
+  {
+    cp<-brewer.pal(12,"Paired")
+    gA <- graph.adjacency(x, mode="undirected",diag=FALSE )# Create graph from Adj matrix#
+    n<-which(x[,q]==1) # Hint..
+    V(gA)$color<-cp[1]  # Base color for all nodes
+    V(gA)[q]$color<-cp[6] # Give vertex 5 a different color
+    
+    V(gA)[n]$color<-cp[5] # Give vertices neighboring 5 a different color
+    
+    E(gA)$color<-"black"  # Base colors for edges
+    E(gA)[q%--%n]$color<-"red"  #  Any edge from 5 to its neighbors
+    plot(gA, layout=layout.auto,main="Addition of a New Person in a Network")
+  } else
+  {
+    print(x)
+  }
+}
+
+#============================================================================
+# PROBLEM 6) Add several people to the friendship network
+
+# Script Name: growNetwork
+# Input: 
+#        A... An adjacency matrix
+#		 p... Probability a relationship forms
+#		 n... the number of people to add
+#		 plot... Show the new person and relationships
+# Output: New adjacency matrix
+#
+# Plot: Plot the graph using igraph. Use three colors for the vertices: one
+# for the newly added person, another for his/her immediate friends, and another
+#  for the remaining vertices. Color red the edges from the new person to
+#  his/her friends.  All remaining edges are black.
+#  
+#
+
+require(igraph)
+library("RColorBrewer") 
+library(network)
+growNetwork<-function(A,n,p,plot=FALSE)
+{
+  g<-as.network.matrix(A,matrix.type="adjacency") #Converting into a NETWORK#
+  t<-nrow(A)
+  index<-nrow(A)+1
+  k<-add.vertices(g,n,vattr= NULL,last.mode = TRUE) #Adding vertices#
+  w<-as.matrix.network(k,matrix.type="adjacency",hyper = FALSE) #Converting bck to a matrix#
+  for(i in index:nrow(w))
+  { 
+    rownames(w)[i]<-i #Giving row names#
+    colnames(w)[i]<-i #Giving column names#
+    for(j in 1:nrow(w))
+    {  
+      
+      w[i,j]<-rbinom(1,1,p)
+      w[j,i]<-w[i,j]  
+    } 
+  }
+  diag(w)<-NA
+  print(w)
+  if(plot == TRUE)
+  {
+    cp<-brewer.pal(12,"Paired")
+    gA <- graph.adjacency(w, mode="undirected",diag=FALSE )# Create graph from Adj matrix#
+    V(gA)$color<-cp[1]  # Base color for all nodes
+    
+    for(p in (t+1):(t+n))
+    {
+      k<-which(w[,p]==1)
+      V(gA)[k]$color<-cp[5]      # color for the immediate friends
+      
+      E(gA)$color<-"black"           # base color for all the edges
+    }
+    
+    for(p in (t+1):(t+n))
+    {
+      V(gA)[p]$color<-cp[4]      # color for the new vertex 
+      
+      b<-which(w[,p]==1)
+      E(gA)[p%--%b]$color<-"red"   # color for the edges from the new person
+    }
+    plot(gA, layout=layout.auto,main="New network graph")
+    
+  }else 
+  {
+    return(w)
+  }
+}
+
+
+
