@@ -1,0 +1,200 @@
+# PROBLEM 1) Comparing Vectors
+#
+# Script Name: longVec
+# Input: Two numeric vectors
+# Output: One numeric vector
+# Error Checking: None
+#
+# Description: Given two vectors, the longer will be deteremined and returned. In the
+# event of a tie, the vector called x will be returned
+#
+
+longVec<-function(x,y)
+{
+  if(length(x) > length(y))
+    
+    return(x)
+  
+  else if (length(x)==length(y)) 
+    
+    return(x)
+  
+  else (length(x)< length(y))
+  
+  return(y)
+  
+}
+
+#=======================================================================
+# PROBLEM 2) Intersection Subsets
+#
+# Script Name: vowelMax
+# Input: Two numeric vectors
+# Output: One numeric vector consisting of only even numbers
+# Error Checking: 
+#     1) If either input is empty, return NULL
+#     2) If either vector is not numeric return NULL
+#     3) If the vectors have an empty intersection (length of intersection
+#          is 0), return NULL
+#     4) If there are no even numbers in the intersection return NULL>
+#
+# Description: Given two vectors, find their intersection (numbers common to both)
+#  and remove all of the odd numbers and return the even numbers
+#
+# Hints:  
+# Run the command: help(intersect)
+# For a number x, (x%%2) is zero if x is even and one if x is odd.
+# Look into indexing a vector with logical values
+
+commonEven<-function(x,y)
+{ 
+  if ((!is.numeric(x) | !is.numeric(y)) | (is.null(x)|is.null(y)))
+  {  
+    return(NULL)
+  }
+  else
+  {
+    a<-intersect(x,y)
+    if (length(a)==0) 
+    {
+      return(NULL)
+    }
+    else
+    {  
+      b<-(a[a%%2==0])
+    }
+    if(length(b)==0) 
+    {
+      return(NULL)
+    }
+    else print(b)
+  }
+}
+
+#================================================================================
+# PROBLEM 3) Longest first difference
+#
+# Script Name: maxDiff
+# Input: x: a numeric vector
+#  	 seqName: a string containing the name of the vector
+#
+# Output: A nonzero number equal to the maximum absolute difference
+#			of the sequence
+
+# Error Checking: 
+#     1) If the input is empty, return NULL
+#     2) If the vector is not numeric, return NULL
+#
+# Messages: Best described by examples. See below:
+#
+#			"|(a[9]-a[8])| = 7 is the maximum absolute difference"
+#        
+#           "Input vector must be numeric."
+# 
+#			"Sequence is empty"
+#    
+# Hint:  
+# Description: Given a sequence, {a[j]}, define the maximum absolute difference as
+#         maximum absolute difference of {a} = max |(a[j+1]-a[j])|   j=1,2,3,...,n-1
+#----------------------------
+# Example:
+#	
+# Good Case:
+#
+#  > e<-c(5,7,10,8,4,0,2,-3,-10)
+#  > e
+#   [1]   5   7  10   8   4   0   2  -3 -10
+#  > maxDiff(e,"a")
+#   [1] "|(a[9]-a[8])| = 7 is the maximum absolute difference"
+#   [1] 7
+#  
+#
+# Error case: Nonnumeric vector
+#
+#  > maxDiff(c("cat","dog"),"pets")
+#   [1] "Input vector must be numeric."
+#  NULL
+#
+# Error case: Empty vector
+# > x<-c(2341)
+# > x<-x[-1]
+# > maxDiff(x,"a")
+# [1] "Sequence is empty"
+# NULL
+
+# End Example-------------------------------
+
+maxDiff<-function(x,seqName)
+{ 
+  if(is.null(x))    
+  {
+    print("sequence is empty")
+    return(NULL)
+  } 
+  else
+  {
+    if(!is.numeric(x))
+    {
+      print("Input vector must be numeric")
+      return(NULL)
+    }
+    else
+    {
+      maxStep<-0
+      maxAbs<-0
+      for(i in 1:(length(x)-1))
+        
+      {
+        absVal<-abs(x[i+1]-x[i])
+        if( absVal > maxAbs)
+          
+        {
+          maxAbs<-absVal
+          maxStep<-i
+        }
+      }
+      return(paste("|(",seqName,"[",maxStep+1,"]-",seqName,"[",maxStep,"])|=",maxAbs,"is the absolute maximum difference",sep=""))
+    }
+  }
+}
+
+#============================================================================
+# PROBLEM 4) Counting vowels in a list a words
+#
+# Script Name: vowelMax
+# Input: A vector of words (character strings)
+# Output: The word with the most vowels
+# Error Checking: If the vector of words is empty, a message is written saying 
+#  "Vector of words is empty" and returning NULL
+#
+# Description: Given a vector of word (character strings), this function finds and 
+#  returns the word with the most vowels.
+#
+
+#
+vowelMax<-function(a)
+{
+  
+  library(stringr)
+  vowels<-c("a","e","i","o","u")
+  b<-vector(mode = "integer")
+  if(sum(str_length(a)!=0))
+  {
+    for(j in 1:length(a))
+    {
+      x <- str_count(a[j],vowels)
+      b[j]<- sum(x)  
+    }
+    
+    s<- paste("The string with maximum number of vowels is :",a[which.max(b)])
+    print(s)
+  }
+  
+  else
+  {
+    print("Vector of words is empty")
+    return(NULL)
+    
+  }
+  
+}
