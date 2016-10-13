@@ -1,0 +1,500 @@
+
+############# Libraries that should be loaded before running each section #############
+
+# 1.dplyr
+# 2.lubridate
+# 3.plyr
+# 4.Quandl
+# 5.reshape
+# 6.xts
+# 7.zoo
+
+#######################################################################################
+
+######################### DataWrangling ###################################
+
+
+DataWrangling<-function(a,numberofcompanies)
+{
+  x5<-readline("Please enter the starting year:")
+  x9<-readline("please enter the ending year (Data is avaible until 2012 for many companies, Please provide year less than 2012):")
+  x4<-paste(x5,"-01-01",sep="")
+  x6<-as.Date(x4)
+  x7<-paste(x9,"-12-31",sep="")
+  x8<-as.Date(x7)
+  x3<-year(x8) - year(x6)
+  Fileread<-read.csv("SnP500Listing.csv")
+  df1<- data.frame(Symbol=Fileread$Ticker.symbol,Sector=Fileread$GICS.Sector,Company=Fileread$Security)
+  df4<-NULL 
+  df6<-NULL
+  for (i in 1:numberofcompanies)
+  {
+    dataBaseName1<-paste("WIKI/",df1[i,1],".4",sep="")
+    dataBaseName2<-paste("DMDRN/",df1[i,1],"_MKT_DE",sep="")
+    
+    df2<-try(Quandl(dataBaseName1,sort="asc",collapse= a,start_date=x6,end_date=x8,authcode="mhgXyxszCtgidBmoDQT8"), silent = TRUE)
+    if ('try-error' %in% class(df2))
+      {
+      cat("\nThe requested entity doesnot have required data for the given time frame:",as.character(df1[i,1]))  
+        
+      next 
+    }    else 
+    {
+      
+      df5<-try(Quandl(dataBaseName2,sort="asc",collapse=a,start_date=x6,end_date=x8,authcode="mhgXyxszCtgidBmoDQT8"), silent = TRUE)
+      if('try-error' %in% class(df5)) 
+        {
+        
+        cat("\nThe requested entity doesnot have required DebtEquatiyratio for the given time frame",as.character(df1[i,1]))  
+        next
+         
+      }      else 
+      {
+        
+        q<-nrow(Quandl(dataBaseName2,sort="asc",collapse=a,start_date=x6,end_date=x8,authcode="mhgXyxszCtgidBmoDQT8"))
+        r<-nrow(Quandl(dataBaseName1,sort="asc",collapse= a,start_date=x6,end_date=x8,authcode="mhgXyxszCtgidBmoDQT8")) 
+        
+        if(q==(x3+1) && r==(x3+1))
+        {
+          df3<-data.frame(CompanyCode=df1[i,1],Company=df1[i,3],Sector=df1[i,2],Date=df2$Date,ClosingPrice=df2$Close)
+          df4<-rbind(df4,df3)
+          df6<-rbind(df6,df5) 
+        }else
+        {
+          cat("\nThe requested entity doesnot have required equal and sufficient data for the given time frame:",as.character(df1[i,1]))
+        }
+        
+      }
+    }
+  }
+  
+  df6[1]<-NULL
+  
+  finalDataFrame<-cbind(df4,df6)
+  View(finalDataFrame)
+  return(finalDataFrame)
+}
+
+finalDataFrame<-DataWrangling("annual",30)                     #Give number of companies#
+
+############ Calculation of RateOfReturns #######################
+
+list<-unique(finalDataFrame$CompanyCode) #List holds the unique Company code#
+list1<-unique(finalDataFrame$CompanyCode) #List holds the unique Company code#
+d101<-finalDataFrame
+d104<-NULL
+d105<-NULL
+#d106<-NULL
+for(i in 1:length(list))
+{
+  d104<-NULL
+  d102<-subset(d101,d101$CompanyCode == list1[i])
+  
+  for(j in 2:nrow(d102))
+  {
+    d103<- data.frame(CompanyCode=d102[j,1],Company=d102[j,2],Sector=d102[j,3],Date=d102[j,4],ClosingPrice=d102[j,5],MarketDebttoEquityRatio=d102[j,6],ROR=((d102[j,5]-d102[j-1,5])/d102[j-1,5]))
+    d104<-rbind(d104,d103)
+  }
+  
+  d105<-rbind(d105,d104)
+}
+RateOfReturns<-d105
+
+print(RateOfReturns)
+
+#View(RateOfReturns)
+
+
+###################### Calculation of Geometric Mean ###########################
+  
+
+list<-unique(RateOfReturns$CompanyCode)  #List holds the unique Company code#
+list1<-unique(RateOfReturns$CompanyCode)            #List1 also holds the unique Company code#
+d6<-NULL
+d7<-NULL
+d8<-NULL
+d9<-NULL
+for(j in 1:nrow(RateOfReturns))
+{
+  
+  bb<-data.frame(plusone=(RateOfReturns[j,7]+1))
+  d6<-rbind(d6,bb)   
+} 
+d7<-data.frame(CompanyCode=RateOfReturns$CompanyCode,summation=d6$plusone)
+
+for(z in 1: length(list1))
+{
+  cc<-subset(d7,d7$CompanyCode == list1[z])
+  pp<-1
+  for(w in 1:nrow(cc))
+  {
+    
+    dd<-data.frame(multiply=(pp*cc[w,2]))
+    pp<-dd
+    
+  }
+  d8<-rbind(d8,pp)
+  #print(dd)
+}
+
+exponent<-(max(year(RateOfReturns$Date))-min(year(RateOfReturns$Date))+1)
+
+for(k in 1:nrow(d8))
+{
+  ee<-data.frame(GeometricMean= ((d8[k,1]^(1/exponent))-1))
+  d9<-rbind(d9,ee)
+  #print(d9)
+}
+
+df10<-data.frame(CompanyCode=unique(RateOfReturns$CompanyCode),Company=unique(RateOfReturns$Company),GeometricMean=d9$GeometricMean)
+print(df10)
+#View(df10)
+
+#ww<-sqldf("SELECT ROR FROM RateOfReturns WHERE CompanyCode == 'MMM' ")
+#w<-sqldf("SELECT ROR FROM RateOfReturns WHERE CompanyCode == q[1] ")
+
+###################### Calculation of VarianceOfAnnualReturn #########################
+
+
+d12<-NULL
+d11<-NULL
+rr<-data.frame(CompanyCode=RateOfReturns$CompanyCode,ROR=RateOfReturns$ROR)
+yy<-data.frame(GeometricMean=df10$GeometricMean)
+
+for(j in 1:length(list))
+{
+  d11<-NULL
+  tt<-subset(rr,rr$CompanyCode == list[j])
+  
+  for(k in 1:nrow(tt))
+  {
+    
+    
+    uu<-data.frame(simplifiedROR=(tt[k,2]-yy[j,1])^2)
+    
+    d11<-rbind(d11,uu)   
+  }
+  
+  d12<-rbind(d12,d11)
+}
+#print(d12)
+
+mm<-data.frame(CompanyCode=RateOfReturns$CompanyCode,RORandGM=d12$simplifiedROR)
+
+kk<-NULL
+for(j in 1:length(list))
+{
+  hh<-0
+  d13<-subset(mm,mm$CompanyCode == list[j])
+  
+  for(k in 1:nrow(d13))
+  {
+    
+    nn<-data.frame(ROR1=(hh+d13[k,2]))
+    hh<-nn  
+  }
+  kk<-rbind(kk,hh)
+  print(kk)
+}
+
+d14<-NULL
+Divisor<-(max(year(RateOfReturns$Date))-min(year(RateOfReturns$Date))+1)
+
+for(k in 1:nrow(kk))
+{
+  jj<-data.frame(Variance= ((kk[k,1])/Divisor))
+  d14<-rbind(d14,jj)
+  #print(d9)
+}
+
+d15<-data.frame(CompanyCode=unique(RateOfReturns$CompanyCode),Company=unique(RateOfReturns$Company),GeometricMean=d9$GeometricMean,VarianceOfAnnualReturn=d14$Variance)
+
+print(d15)
+#View(d15)
+
+######################### Calculation of Company Standard deviation ###################
+
+
+d91<-data.frame(d15)
+d93<-NULL
+
+for(i in 1:nrow(d91))
+{
+  
+  d92<-data.frame(CompanyStandardDeviation=((d91[i,4])^(1/2)))
+  d93<-rbind(d93,d92)
+}
+
+print(d93) 
+
+#View(d93)
+
+###################### Calculation of Skewness #########################
+
+d16<-NULL
+d17<-NULL
+d18<-data.frame(CompanyCode=RateOfReturns$CompanyCode,ROR=RateOfReturns$ROR)
+d19<-data.frame(GeometricMean=df10$GeometricMean)
+
+for(j in 1:length(list))
+{
+  d17<-NULL
+  d20<-subset(d18,d18$CompanyCode == list[j])
+  
+  for(k in 1:nrow(d20))
+  {
+    
+    
+    d21<-data.frame(SimplifiedSkew=(d20[k,2]-d19[j,1])^3)
+    
+    d17<-rbind(d17,d21)   
+  }
+  
+  d16<-rbind(d16,d17)
+}
+#print(d16)
+
+d22<-data.frame(CompanyCode=RateOfReturns$CompanyCode,RORandGM=d16$SimplifiedSkew)
+
+d23<-NULL
+for(j in 1:length(list))
+{
+  d25<-0
+  d27<-subset(d22,d22$CompanyCode == list[j])
+  
+  for(k in 1:nrow(d27))
+  {
+    
+    d24<-data.frame(ROR3=(d25+d27[k,2]))
+    d25<-d24  
+  }
+  d23<-rbind(d23,d25)
+  print(d23)
+}
+
+d28<-NULL
+Divisor<-(max(year(RateOfReturns$Date))-min(year(RateOfReturns$Date))+1)
+
+for(k in 1:nrow(d23))
+{
+  d26<-data.frame(Skewness= ((d23[k,1])/Divisor))
+  d28<-rbind(d28,d26)
+  #print(d9)
+}
+
+d29<-data.frame(CompanyCode=unique(RateOfReturns$CompanyCode),Company=unique(RateOfReturns$Company),GeometricMean=d9$GeometricMean,VarianceOfAnnualReturn=d15$Variance,Skewness=d28$Skewness)
+
+print(d29)
+#View(d29)
+
+############################## Calculation of DebtToEquity ##############################################
+
+
+#View(d31)
+#list
+Divisor<-(max(year(RateOfReturns$Date))-min(year(RateOfReturns$Date))+1)
+d33<-NULL
+for(i in 1:length(list))
+{
+  d30<-0
+  d31<-subset(RateOfReturns,RateOfReturns$CompanyCode == list[i])
+  
+  for(j in 1:nrow(d31))
+  {
+    
+    d32<-data.frame(DtoE=(d30+d31[j,6]))
+    d30<-(d32)
+  }
+  d34<-data.frame(DebtToEquity=(d30/Divisor))
+  d33<-rbind(d33,d34)  
+}
+#print(d33)
+
+d35<-data.frame(CompanyCode=unique(RateOfReturns$CompanyCode),Company=unique(RateOfReturns$Company),GeometricMean=d9$GeometricMean,VarianceOfAnnualReturn=d15$Variance,Skewness=d28$Skewness,DebtToEquity=d33$DtoE)
+print(d35)
+#View(d35)
+
+############################################################################
+
+
+#######  Calculation of Market Co-relation #########
+
+###### Calculation of Market Rate of return ##########
+
+#View(RateOfReturns)
+
+d36<- data.frame(CompanyCode = RateOfReturns$CompanyCode, RespectiveYear= year(RateOfReturns$Date),ROR = RateOfReturns$ROR)
+
+d37<-cast(d36, CompanyCode ~ RespectiveYear, value="ROR")
+#View(d37)
+d41<-unique(year(RateOfReturns$Date))
+
+d40<-NULL
+for(j in 2:ncol(d37))
+{
+  d39<-0
+  for(i in 1:nrow(d37))
+  {   
+    
+    d38<-data.frame(AAA=(d39+d37[i,j]))
+    d39<-(d38)
+  }
+  
+  d40<-rbind(d40,d39)  
+}
+d42<-data.frame(d40/nrow(d37))
+d43<-data.frame(RespectiveYear= unique(year(RateOfReturns$Date)) ,MarketReturns=d42$AAA)
+
+print(d43)
+#View(d43)
+
+##### Calculation of Market Rate of return Geometric Mean ##########
+
+
+d44<-unique(d43$RespectiveYear)
+d45<-NULL
+d46<-NULL
+d47<-NULL
+d48<-NULL
+for(j in 1:nrow(d43))
+{
+  
+  d49<-data.frame(plusone=(d43[j,2]+1))
+  d45<-rbind(d45,d49)   
+} 
+d46<-data.frame(RespectiveYear=d43$RespectiveYear,summation=d45$plusone)
+
+#View(d46)
+
+d51<-1
+for(w in 1:nrow(d46))
+{
+  
+  d50<-data.frame(multiply=(d51*d46[w,2]))
+  d51<-d50
+}
+
+d47<-rbind(d47,d51)
+#print(d47)
+
+exponent<-(max(d43$RespectiveYear)-min(d43$RespectiveYear)+1)
+
+d71<-data.frame(MarketGM =((d47[1,1]^(1/exponent))-1))
+
+d48<-rbind(d48,d71)
+print(d48)
+
+
+
+###################### Calculation of Market Standard Deviation #########################
+
+d53<-NULL
+d54<-NULL
+d55<-d43
+d56<-d48
+
+for(k in 1:nrow(d55))
+{
+  
+  d59<-data.frame(BBB=(d55[k,2]-d56)^2)
+  
+  d54<-rbind(d54,d59)   
+}
+
+d53<-rbind(d53,d54)
+
+d67<-0
+for(i in 1:nrow(d53))
+{   
+  
+  d68<-data.frame(BBB=(d67+d53[i,1]))
+  d67<-(d68)
+}
+
+#print(d67) 
+
+Divisor<-(max(year(RateOfReturns$Date))-min(year(RateOfReturns$Date))+1)
+
+d69<-data.frame(ccc=(d67/Divisor))
+#print(d69)
+
+d70<-data.frame(MarketstandardDeviation=(d69)^(1/2))
+print(d70)
+
+
+#######################  Calculation of Correlation  ##########################################
+
+Divisor<-(max(year(RateOfReturns$Date))-min(year(RateOfReturns$Date)))+1
+d72<-data.frame(CompanyCode=RateOfReturns$CompanyCode,Year=year(RateOfReturns$Date),ROR=RateOfReturns$ROR)
+d73<-data.frame(CompanyCode=df10$CompanyCode,GeometricMean=df10$GeometricMean)
+d74<-data.frame(d43)
+d75<-data.frame(d48)
+d79<-NULL
+d82<-NULL
+#d83<-NULL
+listCompany<-unique(d72$CompanyCode) # MMM ABT ACN #
+#listYear<-unique(d72$Year)
+
+#d78<-subset(d72,d72$Year == listYear[1])
+
+for(z in 1:length(listCompany))
+  
+{
+  d80<-0
+  d76<-subset(d72,d72$CompanyCode == listCompany[z]) 
+  
+  for(j in 1:nrow(d76))
+  {
+    
+    d77<- ((d76[j,3]-d73[z,2]) * (d74[j,2]-d75[1,1]))
+    d80<-(d80+d77)
+    
+  }
+  
+  d81<-data.frame(Correlation=(d80/(Divisor*d70*d93[z,1])))
+  d82<-rbind(d82,d81)   
+}
+
+#print(82)
+#View(d82)
+
+d100<-data.frame(CompanyCode=d35$CompanyCode,Company=d35$Company,GeometricMean=d35$GeometricMean,VarianceOfAnnualReturn=d35$Variance,Skewness=d35$Skewness,DebtToEquity=d35$DebtToEquity,Correlation=d82$BBB)
+
+print(d100)
+
+#View(d100)
+
+################ Calculation of LinearFit  #################
+
+LinearFit<-lm(data=d100,formula=GeometricMean~VarianceOfAnnualReturn+Skewness+DebtToEquity+Correlation)
+
+summary(LinearFit)
+
+
+############################ ERROR ANALYSIS #############################
+                            #----------------#
+
+########################################
+
+# LinearFit ---- (2004 TO 2012)
+
+#LinearFit1  ---- (2007 TO 2011)
+
+#LinearFit2  --- (2010 TO 2012)
+
+summary(LinearFit)
+
+summary(LinearFit1)
+
+summary(LinearFit2)
+
+plot(LinearFit)
+
+# Typically,the higher the R-squared, the better the model fits the data. 90% or more R-Squared value
+#is considered to give the best fit.
+
+#By observing the above "Linear Fit", we infer that R-Squared Values are low and 
+#so the model does not fit the data properly.
+
+
+
